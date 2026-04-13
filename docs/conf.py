@@ -179,5 +179,4 @@ suppress_warnings = ["myst.header"]
 
 def setup(app):
     """Configure the generation of docs."""
-    app.add_css_file("css/loguru.css")
-    app.add_js_file("js/copybutton.js")
+    pass

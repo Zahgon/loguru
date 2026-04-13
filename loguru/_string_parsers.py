@@ -24,8 +24,7 @@ class Frequencies:
         datetime.datetime
             Next hour with minutes, seconds, microseconds set to zero.
         """
-        dt = t + datetime.timedelta(hours=1)
-        return dt.replace(minute=0, second=0, microsecond=0)
+        pass
 
     @staticmethod
     def daily(t: datetime.datetime) -> datetime.datetime:
@@ -41,8 +40,7 @@ class Frequencies:
         datetime.datetime
             Next day with hour, minutes, seconds, microseconds set to zero.
         """
-        dt = t + datetime.timedelta(days=1)
-        return dt.replace(hour=0, minute=0, second=0, microsecond=0)
+        pass
 
     @staticmethod
     def weekly(t: datetime.datetime) -> datetime.datetime:
@@ -58,8 +56,7 @@ class Frequencies:
         datetime.datetime
             Next Monday with hour, minutes, seconds, microseconds set to zero.
         """
-        dt = t + datetime.timedelta(days=7 - t.weekday())
-        return dt.replace(hour=0, minute=0, second=0, microsecond=0)
+        pass
 
     @staticmethod
     def monthly(t: datetime.datetime) -> datetime.datetime:
@@ -75,11 +72,7 @@ class Frequencies:
         datetime.datetime
             First day of next month with hour, minutes, seconds, microseconds set to zero.
         """
-        if t.month == 12:
-            y, m = t.year + 1, 1
-        else:
-            y, m = t.year, t.month + 1
-        return t.replace(year=y, month=m, day=1, hour=0, minute=0, second=0, microsecond=0)
+        pass
 
     @staticmethod
     def yearly(t: datetime.datetime) -> datetime.datetime:
@@ -95,8 +88,7 @@ class Frequencies:
         datetime.datetime
             First day of next year with hour, minutes, seconds, microseconds set to zero.
         """
-        y = t.year + 1
-        return t.replace(year=y, month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+        pass
 
 
 def parse_size(size: str) -> Optional[float]:

@@ -20,18 +20,10 @@ else:
     handler_locks = weakref.WeakSet()
 
     def acquire_locks():
-        for lock in logger_locks:
-            lock.acquire()
-
-        for lock in handler_locks:
-            lock.acquire()
+        pass
 
     def release_locks():
-        for lock in logger_locks:
-            lock.release()
-
-        for lock in handler_locks:
-            lock.release()
+        pass
 
     os.register_at_fork(
         before=acquire_locks,

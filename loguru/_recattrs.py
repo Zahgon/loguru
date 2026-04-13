@@ -283,11 +283,4 @@ class RecordException(
         RecordException
             A new instance with unpickled value
         """
-        try:
-            # It's safe to use "pickle.loads()" in this case because the pickled value is generated
-            # by the same code and is not coming from an untrusted source.
-            value = pickle.loads(pickled_value)
-        except Exception:
-            return cls(type_, None, traceback_)
-        else:
-            return cls(type_, value, traceback_)
+        pass

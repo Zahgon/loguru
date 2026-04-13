@@ -40,70 +40,47 @@ class FileDateFormatter:
 class Compression:
     @staticmethod
     def add_compress(path_in, path_out, opener, **kwargs):
-        with opener(path_out, **kwargs) as f_comp:
-            f_comp.add(path_in, os.path.basename(path_in))
+        pass
 
     @staticmethod
     def write_compress(path_in, path_out, opener, **kwargs):
-        with opener(path_out, **kwargs) as f_comp:
-            f_comp.write(path_in, os.path.basename(path_in))
+        pass
 
     @staticmethod
     def copy_compress(path_in, path_out, opener, **kwargs):
-        with open(path_in, "rb") as f_in:
-            with opener(path_out, **kwargs) as f_out:
-                shutil.copyfileobj(f_in, f_out)
+        pass
 
     @staticmethod
     def compression(path_in, ext, compress_function):
-        path_out = "{}{}".format(path_in, ext)
-
-        if os.path.exists(path_out):
-            creation_time = get_ctime(path_out)
-            root, ext_before = os.path.splitext(path_in)
-            renamed_path = generate_rename_path(root, ext_before + ext, creation_time)
-            os.rename(path_out, renamed_path)
-        compress_function(path_in, path_out)
-        os.remove(path_in)
+        pass
 
 
 class Retention:
     @staticmethod
     def retention_count(logs, number):
-        def key_log(log):
-            return (-os.stat(log).st_mtime, log)
-
-        for log in sorted(logs, key=key_log)[number:]:
-            os.remove(log)
+        pass
 
     @staticmethod
     def retention_age(logs, seconds):
-        t = datetime.datetime.now().timestamp()
-        for log in logs:
-            if os.stat(log).st_mtime <= t - seconds:
-                os.remove(log)
+        pass
 
 
 class Rotation:
     @staticmethod
     def forward_day(t):
-        return t + datetime.timedelta(days=1)
+        pass
 
     @staticmethod
     def forward_weekday(t, weekday):
-        while True:
-            t += datetime.timedelta(days=1)
-            if t.weekday() == weekday:
-                return t
+        pass
 
     @staticmethod
     def forward_interval(t, interval):
-        return t + interval
+        pass
 
     @staticmethod
     def rotation_size(message, file, size_limit):
-        file.seek(0, 2)
-        return file.tell() + len(message) > size_limit
+        pass
 
     class RotationTime:
         def __init__(self, step_forward, time_init=None):

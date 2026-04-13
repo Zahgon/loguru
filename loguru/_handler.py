@@ -11,13 +11,11 @@ from ._locks_machinery import create_handler_lock
 
 
 def prepare_colored_format(format_, ansi_level):
-    colored = Colorizer.prepare_format(format_)
-    return colored, colored.colorize(ansi_level)
+    pass
 
 
 def prepare_stripped_format(format_):
-    colored = Colorizer.prepare_format(format_)
-    return colored.strip()
+    pass
 
 
 def memoize(function):
@@ -246,7 +244,7 @@ class Handler:
 
     @property
     def levelno(self):
-        return self._levelno
+        pass
 
     @staticmethod
     def _format_record(log_format, record):
@@ -305,33 +303,7 @@ class Handler:
         return json.dumps(serializable, default=str, ensure_ascii=False) + "\n"
 
     def _queued_writer(self):
-        message = None
-        queue = self._queue
-
-        # We need to use a lock to protect sink during fork.
-        # Particularly, writing to stderr may lead to deadlock in child process.
-        lock = self._queue_lock
-
-        while True:
-            try:
-                message = queue.get()
-            except Exception:
-                with lock:
-                    self._error_interceptor.print(None)
-                continue
-
-            if message is None:
-                break
-
-            if message is True:
-                self._confirmation_event.set()
-                continue
-
-            with lock:
-                try:
-                    self._sink.write(message)
-                except Exception:
-                    self._error_interceptor.print(message.record)
+        pass
 
     def __getstate__(self):
         state = self.__dict__.copy()

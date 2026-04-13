@@ -1315,16 +1315,12 @@ class Logger:
                 if iscoroutinefunction(function):
 
                     async def catch_wrapper(*args, **kwargs):
-                        with catcher:
-                            return await function(*args, **kwargs)
-                        return default
+                        pass
 
                 elif isgeneratorfunction(function):
 
                     def catch_wrapper(*args, **kwargs):
-                        with catcher:
-                            return (yield from function(*args, **kwargs))
-                        return default
+                        pass
 
                 elif isasyncgenfunction(function):
 
@@ -1347,15 +1343,12 @@ class Logger:
                             return await self._gen.athrow(*args, **kwargs)
 
                     def catch_wrapper(*args, **kwargs):
-                        gen = function(*args, **kwargs)
-                        return AsyncGenCatchWrapper(gen)
+                        pass
 
                 else:
 
                     def catch_wrapper(*args, **kwargs):
-                        with catcher:
-                            return function(*args, **kwargs)
-                        return default
+                        pass
 
                 functools.update_wrapper(catch_wrapper, function)
                 return catch_wrapper
@@ -1501,8 +1494,7 @@ class Logger:
         >>> instance_2.call("Second instance")
         127.0.0.1 - Second instance
         """
-        *options, extra = __self._options
-        return Logger(__self._core, *options, {**extra, **kwargs})
+        pass
 
     @contextlib.contextmanager
     def contextualize(__self, **kwargs):  # noqa: N805
@@ -1595,8 +1587,7 @@ class Logger:
         ...     level, message = record["level"], record["message"]
         ...     logger.patch(lambda r: r.update(record)).log(level, message)
         """
-        *options, patchers, extra = self._options
-        return Logger(self._core, *options, [*patchers, patcher], extra)
+        pass
 
     def level(self, name, no=None, color=None, icon=None):
         r"""Add, update or retrieve a logging level.
@@ -1723,7 +1714,7 @@ class Logger:
         >>> logger.disable("my_library")
         >>> logger.info("While publishing a library, don't forget to disable logging")
         """
-        self._change_activation(name, False)
+        pass
 
     def enable(self, name):
         """Enable logging of messages coming from ``name`` module and its children.
@@ -1747,7 +1738,7 @@ class Logger:
         >>> logger.info("Re-enabled, messages are logged.")
         [22:46:12] Re-enabled, messages are logged.
         """
-        self._change_activation(name, True)
+        pass
 
     def configure(self, *, handlers=None, levels=None, extra=None, patcher=None, activation=None):
         """Configure the core logger.
@@ -1812,32 +1803,7 @@ class Logger:
         >>> logger.bind(context="bar").info("Suppress global context")
         >>> # => "bar - Suppress global context"
         """
-        if handlers is not None:
-            self.remove()
-        else:
-            handlers = []
-
-        if levels is not None:
-            for params in levels:
-                self.level(**params)
-
-        if patcher is not None:
-            with self._core.lock:
-                self._core.patcher = patcher
-
-        if extra is not None:
-            with self._core.lock:
-                self._core.extra.clear()
-                self._core.extra.update(extra)
-
-        if activation is not None:
-            for name, state in activation:
-                if state:
-                    self.enable(name)
-                else:
-                    self.disable(name)
-
-        return [self.add(**params) for params in handlers]
+        pass
 
     def reinstall(self):
         """Reinstall the core of logger.
@@ -1866,49 +1832,10 @@ class Logger:
         ...     logger.info("Main")
         ...     logger.remove()
         """
-        from . import logger
-
-        logger._core = self._core
+        pass
 
     def _change_activation(self, name, status):
-        if not (name is None or isinstance(name, str)):
-            raise TypeError(
-                "Invalid name, it should be a string (or None), not: '%s'" % type(name).__name__
-            )
-
-        with self._core.lock:
-            enabled = self._core.enabled.copy()
-
-            if name is None:
-                for n in enabled:
-                    if n is None:
-                        enabled[n] = status
-                self._core.activation_none = status
-                self._core.enabled = enabled
-                return
-
-            if name != "":
-                name += "."
-
-            activation_list = [
-                (n, s) for n, s in self._core.activation_list if n[: len(name)] != name
-            ]
-
-            parent_status = next((s for n, s in activation_list if name[: len(n)] == n), None)
-            if parent_status != status and not (name == "" and status is True):
-                activation_list.append((name, status))
-
-                def modules_depth(x):
-                    return x[0].count(".")
-
-                activation_list.sort(key=modules_depth, reverse=True)
-
-            for n in enabled:
-                if n is not None and (n + ".")[: len(name)] == name:
-                    enabled[n] = status
-
-            self._core.activation_list = activation_list
-            self._core.enabled = enabled
+        pass
 
     @staticmethod
     def parse(file, pattern, *, cast={}, chunk=2**16):  # noqa: B006
@@ -2165,7 +2092,7 @@ class Logger:
 
     def trace(__self, __message, *args, **kwargs):  # noqa: N805
         r"""Log ``message.format(*args, **kwargs)`` with severity ``'TRACE'``."""
-        __self._log("TRACE", False, __self._options, __message, args, kwargs)
+        pass
 
     def debug(__self, __message, *args, **kwargs):  # noqa: N805
         r"""Log ``message.format(*args, **kwargs)`` with severity ``'DEBUG'``."""
@@ -2181,7 +2108,7 @@ class Logger:
 
     def warning(__self, __message, *args, **kwargs):  # noqa: N805
         r"""Log ``message.format(*args, **kwargs)`` with severity ``'WARNING'``."""
-        __self._log("WARNING", False, __self._options, __message, args, kwargs)
+        pass
 
     def error(__self, __message, *args, **kwargs):  # noqa: N805
         r"""Log ``message.format(*args, **kwargs)`` with severity ``'ERROR'``."""
@@ -2189,7 +2116,7 @@ class Logger:
 
     def critical(__self, __message, *args, **kwargs):  # noqa: N805
         r"""Log ``message.format(*args, **kwargs)`` with severity ``'CRITICAL'``."""
-        __self._log("CRITICAL", False, __self._options, __message, args, kwargs)
+        pass
 
     def exception(__self, __message, *args, **kwargs):  # noqa: N805
         r"""Log an ``'ERROR'`` message while also capturing the currently handled exception.

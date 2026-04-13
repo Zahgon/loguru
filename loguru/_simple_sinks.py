@@ -149,11 +149,7 @@ class AsyncSink:
         task = loop.create_task(coroutine)
 
         def check_exception(future):
-            if future.cancelled() or future.exception() is None:
-                return
-            if not self._error_interceptor.should_catch():
-                raise future.exception()
-            self._error_interceptor.print(message.record, exception=future.exception())
+            pass
 
         task.add_done_callback(check_exception)
         self._tasks.add(task)

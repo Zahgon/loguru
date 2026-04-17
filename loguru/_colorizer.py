@@ -372,19 +372,7 @@ class ColoredFormat:
         return AnsiParser.colorize(self._tokens, ansi_level)
 
     def make_coloring_message(self, message, *, ansi_level, colored_message):
-        messages = [
-            (
-                message
-                if color_tokens is None
-                else AnsiParser.wrap(
-                    colored_message.tokens, ansi_level=ansi_level, color_tokens=color_tokens
-                )
-            )
-            for color_tokens in self._messages_color_tokens
-        ]
-        coloring = ColoringMessage(message)
-        coloring._messages = iter(messages)
-        return coloring
+        pass
 
 
 class Colorizer:
@@ -395,15 +383,11 @@ class Colorizer:
 
     @staticmethod
     def prepare_message(string, args=(), kwargs={}):  # noqa: B006
-        tokens = Colorizer._parse_with_formatting(string, args, kwargs)
-        return ColoredMessage(tokens)
+        pass
 
     @staticmethod
     def prepare_simple_message(string):
-        parser = AnsiParser()
-        parser.feed(string)
-        tokens = parser.done()
-        return ColoredMessage(tokens)
+        pass
 
     @staticmethod
     def ansify(text):
@@ -418,60 +402,7 @@ class Colorizer:
     ):
         # This function re-implements Formatter._vformat()
 
-        if recursion_depth < 0:
-            raise ValueError("Max string recursion exceeded")
-
-        formatter = Formatter()
-        parser = AnsiParser()
-
-        with try_formatting(TypeError, ValueError):
-            parsing_output = list(formatter.parse(string))
-
-        for literal_text, field_name, format_spec, conversion in parsing_output:
-            parser.feed(literal_text, raw=recursive)
-
-            if field_name is not None:
-                if field_name == "":
-                    if auto_arg_index is False:
-                        raise ValueError(
-                            "cannot switch from manual field "
-                            "specification to automatic field "
-                            "numbering"
-                        )
-                    field_name = str(auto_arg_index)
-                    auto_arg_index += 1
-                elif field_name.isdigit():
-                    if auto_arg_index:
-                        raise ValueError(
-                            "cannot switch from manual field "
-                            "specification to automatic field "
-                            "numbering"
-                        )
-                    auto_arg_index = False
-
-                with try_formatting(KeyError, IndexError, AttributeError):
-                    obj, _ = formatter.get_field(field_name, args, kwargs)
-
-                obj = formatter.convert_field(obj, conversion)
-
-                format_spec, auto_arg_index = Colorizer._parse_with_formatting(
-                    format_spec,
-                    args,
-                    kwargs,
-                    recursion_depth=recursion_depth - 1,
-                    auto_arg_index=auto_arg_index,
-                    recursive=True,
-                )
-
-                formatted = formatter.format_field(obj, format_spec)
-                parser.feed(formatted, raw=True)
-
-        tokens = parser.done()
-
-        if recursive:
-            return AnsiParser.strip(tokens), auto_arg_index
-
-        return tokens
+        pass
 
     @staticmethod
     def _parse_without_formatting(string, *, recursion_depth=2, recursive=False):

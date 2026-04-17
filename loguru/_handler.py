@@ -19,7 +19,7 @@ def prepare_stripped_format(format_):
 
 
 def memoize(function):
-    return functools.lru_cache(maxsize=64)(function)
+    pass
 
 
 class Message(str):
@@ -108,133 +108,19 @@ class Handler:
     @contextmanager
     def _protected_lock(self):
         """Acquire the lock, but fail fast if its already acquired by the current thread."""
-        if getattr(self._lock_acquired, "acquired", False):
-            raise RuntimeError(
-                "Could not acquire internal lock because it was already in use (deadlock avoided). "
-                "This likely happened because the logger was re-used inside a sink, a signal "
-                "handler or a '__del__' method. This is not permitted because the logger and its "
-                "handlers are not re-entrant."
-            )
-        try:
-            self._lock_acquired.acquired = True
-            with self._lock:
-                yield
-        finally:
-            self._lock_acquired.acquired = False
+        pass
 
     def emit(self, record, level_id, from_decorator, is_raw, colored_message):
-        try:
-            if self._levelno > record["level"].no:
-                return
-
-            if self._filter is not None:
-                if not self._filter(record):
-                    return
-
-            if self._is_formatter_dynamic:
-                dynamic_format = self._formatter(record)
-
-            formatter_record = record.copy()
-
-            if not record["exception"]:
-                formatter_record["exception"] = ""
-            else:
-                type_, value, tb = record["exception"]
-                formatter = self._exception_formatter
-                lines = formatter.format_exception(type_, value, tb, from_decorator=from_decorator)
-                formatter_record["exception"] = "".join(lines)
-
-            if colored_message is not None and colored_message.stripped != record["message"]:
-                colored_message = None
-
-            if is_raw:
-                if colored_message is None or not self._colorize:
-                    formatted = record["message"]
-                else:
-                    ansi_level = self._levels_ansi_codes[level_id]
-                    formatted = colored_message.colorize(ansi_level)
-            elif self._is_formatter_dynamic:
-                if not self._colorize:
-                    precomputed_format = self._memoize_dynamic_format(dynamic_format)
-                    formatted = self._format_record(precomputed_format, formatter_record)
-                elif colored_message is None:
-                    ansi_level = self._levels_ansi_codes[level_id]
-                    _, precomputed_format = self._memoize_dynamic_format(dynamic_format, ansi_level)
-                    formatted = self._format_record(precomputed_format, formatter_record)
-                else:
-                    ansi_level = self._levels_ansi_codes[level_id]
-                    formatter, precomputed_format = self._memoize_dynamic_format(
-                        dynamic_format, ansi_level
-                    )
-                    coloring_message = formatter.make_coloring_message(
-                        record["message"], ansi_level=ansi_level, colored_message=colored_message
-                    )
-                    formatter_record["message"] = coloring_message
-                    formatted = self._format_record(precomputed_format, formatter_record)
-
-            else:
-                if not self._colorize:
-                    precomputed_format = self._decolorized_format
-                    formatted = self._format_record(precomputed_format, formatter_record)
-                elif colored_message is None:
-                    ansi_level = self._levels_ansi_codes[level_id]
-                    precomputed_format = self._precolorized_formats[level_id]
-                    formatted = self._format_record(precomputed_format, formatter_record)
-                else:
-                    ansi_level = self._levels_ansi_codes[level_id]
-                    precomputed_format = self._precolorized_formats[level_id]
-                    coloring_message = self._formatter.make_coloring_message(
-                        record["message"], ansi_level=ansi_level, colored_message=colored_message
-                    )
-                    formatter_record["message"] = coloring_message
-                    formatted = self._format_record(precomputed_format, formatter_record)
-
-            if self._serialize:
-                formatted = self._serialize_record(formatted, record)
-
-            str_record = Message(formatted)
-            str_record.record = record
-
-            with self._protected_lock():
-                if self._stopped:
-                    return
-                if self._enqueue:
-                    self._queue.put(str_record)
-                else:
-                    self._sink.write(str_record)
-        except Exception:
-            if not self._error_interceptor.should_catch():
-                raise
-            self._error_interceptor.print(record)
+        pass
 
     def stop(self):
-        with self._protected_lock():
-            self._stopped = True
-            if self._enqueue:
-                if self._owner_process_pid != os.getpid():
-                    return
-                self._queue.put(None)
-                self._thread.join()
-                if hasattr(self._queue, "close"):
-                    self._queue.close()
-
-            self._sink.stop()
+        pass
 
     def complete_queue(self):
-        if not self._enqueue:
-            return
-
-        with self._confirmation_lock:
-            self._queue.put(True)
-            self._confirmation_event.wait()
-            self._confirmation_event.clear()
+        pass
 
     def tasks_to_complete(self):
-        if self._enqueue and self._owner_process_pid != os.getpid():
-            return []
-        lock = self._queue_lock if self._enqueue else self._protected_lock()
-        with lock:
-            return self._sink.tasks_to_complete()
+        pass
 
     def update_format(self, level_id):
         if not self._colorize or self._is_formatter_dynamic:
@@ -248,59 +134,11 @@ class Handler:
 
     @staticmethod
     def _format_record(log_format, record):
-        try:
-            return log_format.format_map(record)
-        except KeyError as e:
-            available = ", ".join(map(repr, record.keys()))
-            raise ValueError(
-                "Failed to format log record: key %s not found.\n"
-                "Verify that the format string %r only references valid record keys "
-                "and that all required extra keys are present.\n"
-                "Available records key are: %s.\n"
-                "While using a dynamic formatter as a function, note that it must return "
-                "the string to be formatted, not an already formatted message.\n"
-                "To include custom data, use 'logger.bind(key=value)' and reference it "
-                "as '{extra[key]}' in the format string." % (e, log_format, available)
-            ) from e
+        pass
 
     @staticmethod
     def _serialize_record(text, record):
-        exception = record["exception"]
-
-        if exception is not None:
-            exception = {
-                "type": None if exception.type is None else exception.type.__name__,
-                "value": exception.value,
-                "traceback": bool(exception.traceback),
-            }
-
-        serializable = {
-            "text": text,
-            "record": {
-                "elapsed": {
-                    "repr": record["elapsed"],
-                    "seconds": record["elapsed"].total_seconds(),
-                },
-                "exception": exception,
-                "extra": record["extra"],
-                "file": {"name": record["file"].name, "path": record["file"].path},
-                "function": record["function"],
-                "level": {
-                    "icon": record["level"].icon,
-                    "name": record["level"].name,
-                    "no": record["level"].no,
-                },
-                "line": record["line"],
-                "message": record["message"],
-                "module": record["module"],
-                "name": record["name"],
-                "process": {"id": record["process"].id, "name": record["process"].name},
-                "thread": {"id": record["thread"].id, "name": record["thread"].name},
-                "time": {"repr": record["time"], "timestamp": record["time"].timestamp()},
-            },
-        }
-
-        return json.dumps(serializable, default=str, ensure_ascii=False) + "\n"
+        pass
 
     def _queued_writer(self):
         pass

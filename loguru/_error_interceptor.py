@@ -8,7 +8,7 @@ class ErrorInterceptor:
         self._handler_id = handler_id
 
     def should_catch(self):
-        return self._should_catch
+        pass
 
     def print(self, record=None, *, exception=None):
         pass

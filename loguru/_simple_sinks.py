@@ -28,14 +28,11 @@ class StreamSink:
         message
             The message to write.
         """
-        self._stream.write(message)
-        if self._flushable:
-            self._stream.flush()
+        pass
 
     def stop(self):
         """Stop the stream if it supports the stop operation."""
-        if self._stoppable:
-            self._stream.stop()
+        pass
 
     def tasks_to_complete(self):
         """Return list of tasks that need to be completed.
@@ -45,9 +42,7 @@ class StreamSink:
         list
             List of tasks to complete.
         """
-        if not self._completable:
-            return []
-        return [self._stream.complete()]
+        pass
 
 
 class StandardSink:
@@ -70,37 +65,11 @@ class StandardSink:
         message
             The message to write.
         """
-        if message.record["level"].no < self._handler.level:
-            return
-        raw_record = message.record
-        message = str(message)
-        exc = raw_record["exception"]
-        record = logging.getLogger().makeRecord(
-            raw_record["name"],
-            raw_record["level"].no,
-            raw_record["file"].path,
-            raw_record["line"],
-            message,
-            (),
-            (exc.type, exc.value, exc.traceback) if exc else None,
-            raw_record["function"],
-            {"extra": raw_record["extra"]},
-        )
-
-        # By default, the standard logging module will format the exception and assign it to the
-        # "exc_text" attribute. Then, the formatted exception will be automatically appended to the
-        # message when the record is formatted. This is a problem, because that would cause the
-        # exception to be duplicated in the log message, since it's also formatted by Loguru. To
-        # avoid this, we set "exc_text" to a simple newline character, which will end the message.
-        if exc:
-            record.exc_text = "\n"
-
-        record.levelname = raw_record["level"].name
-        self._handler.handle(record)
+        pass
 
     def stop(self):
         """Close the logging handler."""
-        self._handler.close()
+        pass
 
     def tasks_to_complete(self):
         """Return list of tasks that need to be completed.
@@ -110,7 +79,7 @@ class StandardSink:
         list
             Empty list as standard sink has no async tasks.
         """
-        return []
+        pass
 
 
 class AsyncSink:
@@ -140,24 +109,11 @@ class AsyncSink:
         message
             The message to write.
         """
-        try:
-            loop = self._loop or get_running_loop()
-        except RuntimeError:
-            return
-
-        coroutine = self._function(message)
-        task = loop.create_task(coroutine)
-
-        def check_exception(future):
-            pass
-
-        task.add_done_callback(check_exception)
-        self._tasks.add(task)
+        pass
 
     def stop(self):
         """Cancel all pending tasks."""
-        for task in self._tasks:
-            task.cancel()
+        pass
 
     def tasks_to_complete(self):
         """Return list of tasks that need to be completed.
@@ -167,12 +123,7 @@ class AsyncSink:
         list
             List of tasks to complete.
         """
-        # To avoid errors due to "self._tasks" being mutated while iterated, the
-        # "tasks_to_complete()" method must be protected by the same lock as "write()" (which
-        # happens to be the handler lock). However, the tasks must not be awaited while the lock is
-        # acquired as this could lead to a deadlock. Therefore, we first need to collect the tasks
-        # to complete, then return them so that they can be awaited outside of the lock.
-        return [self._complete_task(task) for task in self._tasks]
+        pass
 
     async def _complete_task(self, task):
         """Complete a single task.
@@ -182,13 +133,7 @@ class AsyncSink:
         task
             The task to complete.
         """
-        loop = get_running_loop()
-        if get_task_loop(task) is not loop:
-            return
-        try:
-            await task
-        except Exception:
-            pass  # Handled in "check_exception()"
+        pass
 
     def __getstate__(self):
         state = self.__dict__.copy()
@@ -220,7 +165,7 @@ class CallableSink:
         message
             The message to pass to the function.
         """
-        self._function(message)
+        pass
 
     def stop(self):
         """Stop the sink (no-op for callable sink)."""
@@ -234,4 +179,4 @@ class CallableSink:
         list
             Empty list as callable sink has no tasks.
         """
-        return []
+        pass

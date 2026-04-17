@@ -133,7 +133,7 @@ else:
     from pathlib import PurePath as PathLike
 
     def isasyncgenfunction(func):
-        return False
+        pass
 
 
 Level = namedtuple("Level", ["name", "no", "color", "icon"])  # noqa: PYI024
@@ -1075,31 +1075,7 @@ class Logger:
         >>> logger.remove(i)
         >>> logger.info("No longer logging")
         """
-        if not (handler_id is None or isinstance(handler_id, int)):
-            raise TypeError(
-                "Invalid handler id, it should be an integer as returned "
-                "by the 'add()' method (or None), not: '%s'" % type(handler_id).__name__
-            )
-
-        with self._core.lock:
-            if handler_id is not None and handler_id not in self._core.handlers:
-                raise ValueError("There is no existing handler with id %d" % handler_id) from None
-
-            if handler_id is None:
-                handler_ids = list(self._core.handlers)
-            else:
-                handler_ids = [handler_id]
-
-            for handler_id in handler_ids:
-                handlers = self._core.handlers.copy()
-                handler = handlers.pop(handler_id)
-
-                # This needs to be done first in case "stop()" raises an exception
-                levelnos = (h.levelno for h in handlers.values())
-                self._core.min_level = min(levelnos, default=float("inf"))
-                self._core.handlers = handlers
-
-                handler.stop()
+        pass
 
     def complete(self):
         """Wait for the end of enqueued messages and asynchronous tasks scheduled by handlers.
@@ -1151,20 +1127,7 @@ class Logger:
         >>> process.join()
         Message sent from the child
         """
-        tasks = []
-
-        with self._core.lock:
-            handlers = self._core.handlers.copy()
-            for handler in handlers.values():
-                handler.complete_queue()
-                tasks.extend(handler.tasks_to_complete())
-
-        class AwaitableCompleter:
-            def __await__(self):
-                for task in tasks:
-                    yield from task.__await__()
-
-        return AwaitableCompleter()
+        pass
 
     def catch(
         self,
@@ -1251,115 +1214,7 @@ class Logger:
         ... def main():
         ...     1 / 0
         """
-        if callable(exception) and (
-            not isclass(exception) or not issubclass(exception, BaseException)
-        ):
-            return self.catch()(exception)
-
-        logger = self
-
-        class Catcher:
-            def __init__(self, from_decorator):
-                self._from_decorator = from_decorator
-
-            def __enter__(self):
-                return None
-
-            def __exit__(self, type_, value, traceback_):
-                if type_ is None:
-                    return None
-
-                # We must prevent infinite recursion in case "logger.catch()" handles an exception
-                # that occurs while logging another exception. This can happen for example when
-                # the exception formatter calls "repr(obj)" while the "__repr__" method is broken
-                # but decorated with "logger.catch()". In such a case, we ignore the catching
-                # mechanism and just let the exception be thrown (that way, the formatter will
-                # rightly assume the object is unprintable).
-                if getattr(logger._core.thread_locals, "already_logging_exception", False):
-                    return False
-
-                if not issubclass(type_, exception):
-                    return False
-
-                if exclude is not None and issubclass(type_, exclude):
-                    return False
-
-                from_decorator = self._from_decorator
-                _, depth, _, *options = logger._options
-
-                if from_decorator:
-                    depth += 1
-
-                catch_options = [(type_, value, traceback_), depth, True, *options]
-
-                logger._core.thread_locals.already_logging_exception = True
-                try:
-                    logger._log(level, from_decorator, catch_options, message, (), {})
-                finally:
-                    logger._core.thread_locals.already_logging_exception = False
-
-                if onerror is not None:
-                    onerror(value)
-
-                return not reraise
-
-            def __call__(self, function):
-                if isclass(function):
-                    raise TypeError(
-                        "Invalid object decorated with 'catch()', it must be a function, "
-                        "not a class (tried to wrap '%s')" % function.__name__
-                    )
-
-                catcher = Catcher(True)
-
-                if iscoroutinefunction(function):
-
-                    async def catch_wrapper(*args, **kwargs):
-                        pass
-
-                elif isgeneratorfunction(function):
-
-                    def catch_wrapper(*args, **kwargs):
-                        pass
-
-                elif isasyncgenfunction(function):
-
-                    class AsyncGenCatchWrapper(AsyncGenerator):
-
-                        def __init__(self, gen):
-                            self._gen = gen
-
-                        async def asend(self, value):
-                            with catcher:
-                                try:
-                                    return await self._gen.asend(value)
-                                except StopAsyncIteration:
-                                    pass
-                                except:
-                                    raise
-                            raise StopAsyncIteration
-
-                        async def athrow(self, *args, **kwargs):
-                            return await self._gen.athrow(*args, **kwargs)
-
-                    def catch_wrapper(*args, **kwargs):
-                        pass
-
-                else:
-
-                    def catch_wrapper(*args, **kwargs):
-                        pass
-
-                functools.update_wrapper(catch_wrapper, function)
-                return catch_wrapper
-
-            async def __aenter__(self):
-                return self.__enter__()
-
-            async def __aexit__(self, type_, value, traceback_):
-                return self.__exit__(type_, value, traceback_)
-
-        return Catcher(False)
+        pass
 
     def opt(
         self,
@@ -1450,16 +1305,7 @@ class Logger:
         >>> func()
         [18:11:54] DEBUG in 'func' - Get parent context
         """
-        if ansi:
-            colors = True
-            warnings.warn(
-                "The 'ansi' parameter is deprecated, please use 'colors' instead",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-
-        args = self._options[-2:]
-        return Logger(self._core, exception, depth, record, lazy, colors, raw, capture, *args)
+        pass
 
     def bind(__self, **kwargs):  # noqa: N805
         """Bind attributes to the ``extra`` dict of each logged message record.
@@ -1531,15 +1377,7 @@ class Logger:
         >>> logger.info("Done.")
         Done. | {}
         """
-        with __self._core.lock:
-            new_context = {**context.get(), **kwargs}
-            token = context.set(new_context)
-
-        try:
-            yield
-        finally:
-            with __self._core.lock:
-                context.reset(token)
+        pass
 
     def patch(self, patcher):
         """Attach a function to modify the record dict created by each logging call.
@@ -1953,142 +1791,7 @@ class Logger:
                 yield from matches[:-1]
 
     def _log(self, level, from_decorator, options, message, args, kwargs):
-        core = self._core
-
-        if not core.handlers:
-            return
-
-        try:
-            level_id, level_name, level_no, level_icon = core.levels_lookup[level]
-        except (KeyError, TypeError):
-            if isinstance(level, str):
-                raise ValueError("Level '%s' does not exist" % level) from None
-            if not isinstance(level, int):
-                raise TypeError(
-                    "Invalid level, it should be an integer or a string, not: '%s'"
-                    % type(level).__name__
-                ) from None
-            if level < 0:
-                raise ValueError(
-                    "Invalid level value, it should be a positive integer, not: %d" % level
-                ) from None
-            cache = (None, "Level %d" % level, level, " ")
-            level_id, level_name, level_no, level_icon = cache
-            core.levels_lookup[level] = cache
-
-        if level_no < core.min_level:
-            return
-
-        exception, depth, record, lazy, colors, raw, capture, patchers, extra = options
-
-        try:
-            frame = get_frame(depth + 2)
-        except ValueError:
-            f_globals = {}
-            f_lineno = 0
-            co_name = "<unknown>"
-            co_filename = "<unknown>"
-        else:
-            f_globals = frame.f_globals
-            f_lineno = frame.f_lineno or 0  # Can be None, see python/cpython#89726.
-            co_name = frame.f_code.co_name
-            co_filename = frame.f_code.co_filename
-
-        try:
-            name = f_globals["__name__"]
-        except KeyError:
-            name = None
-
-        try:
-            if not core.enabled[name]:
-                return
-        except KeyError:
-            enabled = core.enabled
-            if name is None:
-                status = core.activation_none
-                enabled[name] = status
-                if not status:
-                    return
-            else:
-                dotted_name = name + "."
-                for dotted_module_name, status in core.activation_list:
-                    if dotted_name[: len(dotted_module_name)] == dotted_module_name:
-                        if status:
-                            break
-                        enabled[name] = False
-                        return
-                enabled[name] = True
-
-        current_datetime = aware_now()
-
-        file_name = basename(co_filename)
-        thread = current_thread()
-        process = current_process()
-        elapsed = current_datetime - start_time
-
-        if exception:
-            if isinstance(exception, BaseException):
-                type_, value, traceback = (type(exception), exception, exception.__traceback__)
-            elif isinstance(exception, tuple):
-                type_, value, traceback = exception
-            else:
-                type_, value, traceback = sys.exc_info()
-            exception = RecordException(type_, value, traceback)
-        else:
-            exception = None
-
-        log_record = {
-            "elapsed": elapsed,
-            "exception": exception,
-            "extra": {**core.extra, **context.get(), **extra},
-            "file": RecordFile(file_name, co_filename),
-            "function": co_name,
-            "level": RecordLevel(level_name, level_no, level_icon),
-            "line": f_lineno,
-            "message": str(message),
-            "module": splitext(file_name)[0],
-            "name": name,
-            "process": RecordProcess(process.ident, process.name),
-            "thread": RecordThread(thread.ident, thread.name),
-            "time": current_datetime,
-        }
-
-        if lazy:
-            args = [arg() for arg in args]
-            kwargs = {key: value() for key, value in kwargs.items()}
-
-        if capture and kwargs:
-            log_record["extra"].update(kwargs)
-
-        if record:
-            if "record" in kwargs:
-                raise TypeError(
-                    "The message can't be formatted: 'record' shall not be used as a keyword "
-                    "argument while logger has been configured with '.opt(record=True)'"
-                )
-            kwargs.update(record=log_record)
-
-        if colors:
-            if args or kwargs:
-                colored_message = Colorizer.prepare_message(message, args, kwargs)
-            else:
-                colored_message = Colorizer.prepare_simple_message(str(message))
-            log_record["message"] = colored_message.stripped
-        elif args or kwargs:
-            colored_message = None
-            with try_formatting(KeyError, IndexError, AttributeError, ValueError):
-                log_record["message"] = message.format(*args, **kwargs)
-        else:
-            colored_message = None
-
-        if core.patcher:
-            core.patcher(log_record)
-
-        for patcher in patchers:
-            patcher(log_record)
-
-        for handler in core.handlers.values():
-            handler.emit(log_record, level_id, from_decorator, raw, colored_message)
+        pass
 
     def trace(__self, __message, *args, **kwargs):  # noqa: N805
         r"""Log ``message.format(*args, **kwargs)`` with severity ``'TRACE'``."""
@@ -2096,15 +1799,15 @@ class Logger:
 
     def debug(__self, __message, *args, **kwargs):  # noqa: N805
         r"""Log ``message.format(*args, **kwargs)`` with severity ``'DEBUG'``."""
-        __self._log("DEBUG", False, __self._options, __message, args, kwargs)
+        pass
 
     def info(__self, __message, *args, **kwargs):  # noqa: N805
         r"""Log ``message.format(*args, **kwargs)`` with severity ``'INFO'``."""
-        __self._log("INFO", False, __self._options, __message, args, kwargs)
+        pass
 
     def success(__self, __message, *args, **kwargs):  # noqa: N805
         r"""Log ``message.format(*args, **kwargs)`` with severity ``'SUCCESS'``."""
-        __self._log("SUCCESS", False, __self._options, __message, args, kwargs)
+        pass
 
     def warning(__self, __message, *args, **kwargs):  # noqa: N805
         r"""Log ``message.format(*args, **kwargs)`` with severity ``'WARNING'``."""
@@ -2112,7 +1815,7 @@ class Logger:
 
     def error(__self, __message, *args, **kwargs):  # noqa: N805
         r"""Log ``message.format(*args, **kwargs)`` with severity ``'ERROR'``."""
-        __self._log("ERROR", False, __self._options, __message, args, kwargs)
+        pass
 
     def critical(__self, __message, *args, **kwargs):  # noqa: N805
         r"""Log ``message.format(*args, **kwargs)`` with severity ``'CRITICAL'``."""
@@ -2125,8 +1828,7 @@ class Logger:
         an ``except`` block. To log an exception that has already been caught, use the ``exception``
         argument of |opt| along with a call to the |error| method (for example).
         """
-        options = (True, *__self._options[1:])
-        __self._log("ERROR", False, options, __message, args, kwargs)
+        pass
 
     def log(__self, __level, __message, *args, **kwargs):  # noqa: N805
         r"""Log ``message.format(*args, **kwargs)`` with severity ``level``.
@@ -2134,7 +1836,7 @@ class Logger:
         Note that if an |int| is provided as ``level``, the level is interpreted as an anonymous
         one and displayed as such (see also |FAQ anonymous levels| for more details).
         """
-        __self._log(__level, False, __self._options, __message, args, kwargs)
+        pass
 
     def start(self, *args, **kwargs):
         """Add a handler sending log messages to a sink adequately configured.
@@ -2165,9 +1867,4 @@ class Logger:
           ``stop()`` will be removed in Loguru 1.0.0, it is replaced by ``remove()`` which is a less
           confusing name.
         """
-        warnings.warn(
-            "The 'stop()' method is deprecated, please use 'remove()' instead",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return self.remove(*args, **kwargs)
+        pass

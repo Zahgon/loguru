@@ -14,17 +14,7 @@ from ._datetime import aware_now
 
 
 def generate_rename_path(root, ext, creation_time):
-    creation_datetime = datetime.datetime.fromtimestamp(creation_time)
-    date = FileDateFormatter(creation_datetime)
-
-    renamed_path = "{}.{}{}".format(root, date, ext)
-    counter = 1
-
-    while os.path.exists(renamed_path):
-        counter += 1
-        renamed_path = "{}.{}.{}{}".format(root, date, counter, ext)
-
-    return renamed_path
+    pass
 
 
 class FileDateFormatter:
@@ -176,244 +166,46 @@ class FileSink:
             self._create_file(path)
 
     def write(self, message):
-        if self._file is None:
-            path = self._create_path()
-            self._create_dirs(path)
-            self._create_file(path)
-
-        if self._watch:
-            self._reopen_if_needed()
-
-        if self._rotation_function is not None and self._rotation_function(message, self._file):
-            self._terminate_file(is_rotating=True)
-
-        self._file.write(message)
+        pass
 
     def stop(self):
-        if self._watch:
-            self._reopen_if_needed()
-
-        self._terminate_file(is_rotating=False)
+        pass
 
     def tasks_to_complete(self):
-        return []
+        pass
 
     def _create_path(self):
-        path = self._path.format_map({"time": FileDateFormatter()})
-        return os.path.abspath(path)
+        pass
 
     def _create_dirs(self, path):
-        dirname = os.path.dirname(path)
-        os.makedirs(dirname, exist_ok=True)
+        pass
 
     def _create_file(self, path):
-        self._file = open(path, **self._kwargs)
-        self._file_path = path
-
-        if self._watch:
-            fileno = self._file.fileno()
-            result = os.fstat(fileno)
-            self._file_dev = result[ST_DEV]
-            self._file_ino = result[ST_INO]
+        pass
 
     def _close_file(self):
-        self._file.flush()
-        self._file.close()
-
-        self._file = None
-        self._file_path = None
-        self._file_dev = -1
-        self._file_ino = -1
+        pass
 
     def _reopen_if_needed(self):
         # Implemented based on standard library:
         # https://github.com/python/cpython/blob/cb589d1b/Lib/logging/handlers.py#L486
-        if not self._file:
-            return
-
-        filepath = self._file_path
-
-        try:
-            result = os.stat(filepath)
-        except FileNotFoundError:
-            result = None
-
-        if not result or result[ST_DEV] != self._file_dev or result[ST_INO] != self._file_ino:
-            self._close_file()
-            self._create_dirs(filepath)
-            self._create_file(filepath)
+        pass
 
     def _terminate_file(self, *, is_rotating=False):
-        old_path = self._file_path
-
-        if self._file is not None:
-            self._close_file()
-
-        if is_rotating:
-            new_path = self._create_path()
-            self._create_dirs(new_path)
-
-            if new_path == old_path:
-                creation_time = get_ctime(old_path)
-                root, ext = os.path.splitext(old_path)
-                renamed_path = generate_rename_path(root, ext, creation_time)
-                os.rename(old_path, renamed_path)
-                old_path = renamed_path
-
-        if is_rotating or self._rotation_function is None:
-            if self._compression_function is not None and old_path is not None:
-                self._compression_function(old_path)
-
-            if self._retention_function is not None:
-                logs = {
-                    file
-                    for pattern in self._glob_patterns
-                    for file in glob.glob(pattern)
-                    if os.path.isfile(file)
-                }
-                self._retention_function(list(logs))
-
-        if is_rotating:
-            self._create_file(new_path)
-            set_ctime(new_path, datetime.datetime.now().timestamp())
+        pass
 
     @staticmethod
     def _make_glob_patterns(path):
-        formatter = string.Formatter()
-        tokens = formatter.parse(path)
-        escaped = "".join(glob.escape(text) + "*" * (name is not None) for text, name, *_ in tokens)
-
-        root, ext = os.path.splitext(escaped)
-
-        if not ext:
-            return [escaped, escaped + ".*"]
-
-        return [escaped, escaped + ".*", root + ".*" + ext, root + ".*" + ext + ".*"]
+        pass
 
     @staticmethod
     def _make_rotation_function(rotation):
-        if rotation is None:
-            return None
-        if isinstance(rotation, (list, tuple, set)):
-            if len(rotation) == 0:
-                raise ValueError("Must provide at least one rotation condition")
-            return Rotation.RotationGroup(
-                [FileSink._make_rotation_function(rot) for rot in rotation]
-            )
-        if isinstance(rotation, str):
-            size = string_parsers.parse_size(rotation)
-            if size is not None:
-                return FileSink._make_rotation_function(size)
-            interval = string_parsers.parse_duration(rotation)
-            if interval is not None:
-                return FileSink._make_rotation_function(interval)
-            frequency = string_parsers.parse_frequency(rotation)
-            if frequency is not None:
-                return Rotation.RotationTime(frequency)
-            daytime = string_parsers.parse_daytime(rotation)
-            if daytime is not None:
-                day, time = daytime
-                if day is None:
-                    return FileSink._make_rotation_function(time)
-                if time is None:
-                    time = datetime.time(0, 0, 0)
-                step_forward = partial(Rotation.forward_weekday, weekday=day)
-                return Rotation.RotationTime(step_forward, time)
-            raise ValueError("Cannot parse rotation from: '%s'" % rotation)
-        if isinstance(rotation, (numbers.Real, decimal.Decimal)):
-            return partial(Rotation.rotation_size, size_limit=rotation)
-        if isinstance(rotation, datetime.time):
-            return Rotation.RotationTime(Rotation.forward_day, rotation)
-        if isinstance(rotation, datetime.timedelta):
-            step_forward = partial(Rotation.forward_interval, interval=rotation)
-            return Rotation.RotationTime(step_forward)
-        if callable(rotation):
-            return rotation
-        raise TypeError("Cannot infer rotation for objects of type: '%s'" % type(rotation).__name__)
+        pass
 
     @staticmethod
     def _make_retention_function(retention):
-        if retention is None:
-            return None
-        if isinstance(retention, str):
-            interval = string_parsers.parse_duration(retention)
-            if interval is None:
-                raise ValueError("Cannot parse retention from: '%s'" % retention)
-            return FileSink._make_retention_function(interval)
-        if isinstance(retention, int):
-            return partial(Retention.retention_count, number=retention)
-        if isinstance(retention, datetime.timedelta):
-            return partial(Retention.retention_age, seconds=retention.total_seconds())
-        if callable(retention):
-            return retention
-        raise TypeError(
-            "Cannot infer retention for objects of type: '%s'" % type(retention).__name__
-        )
+        pass
 
     @staticmethod
     def _make_compression_function(compression):
-        if compression is None:
-            return None
-        if isinstance(compression, str):
-            ext = compression.strip().lstrip(".")
-
-            if ext == "gz":
-                import gzip
-
-                compress = partial(Compression.copy_compress, opener=gzip.open, mode="wb")
-            elif ext == "bz2":
-                import bz2
-
-                compress = partial(Compression.copy_compress, opener=bz2.open, mode="wb")
-
-            elif ext == "xz":
-                import lzma
-
-                compress = partial(
-                    Compression.copy_compress, opener=lzma.open, mode="wb", format=lzma.FORMAT_XZ
-                )
-
-            elif ext == "lzma":
-                import lzma
-
-                compress = partial(
-                    Compression.copy_compress, opener=lzma.open, mode="wb", format=lzma.FORMAT_ALONE
-                )
-            elif ext == "tar":
-                import tarfile
-
-                compress = partial(Compression.add_compress, opener=tarfile.open, mode="w:")
-            elif ext == "tar.gz":
-                import gzip
-                import tarfile
-
-                compress = partial(Compression.add_compress, opener=tarfile.open, mode="w:gz")
-            elif ext == "tar.bz2":
-                import bz2
-                import tarfile
-
-                compress = partial(Compression.add_compress, opener=tarfile.open, mode="w:bz2")
-
-            elif ext == "tar.xz":
-                import lzma
-                import tarfile
-
-                compress = partial(Compression.add_compress, opener=tarfile.open, mode="w:xz")
-            elif ext == "zip":
-                import zipfile
-
-                compress = partial(
-                    Compression.write_compress,
-                    opener=zipfile.ZipFile,
-                    mode="w",
-                    compression=zipfile.ZIP_DEFLATED,
-                )
-            else:
-                raise ValueError("Invalid compression format: '%s'" % ext)
-
-            return partial(Compression.compression, ext="." + ext, compress_function=compress)
-        if callable(compression):
-            return compression
-        raise TypeError(
-            "Cannot infer compression for objects of type: '%s'" % type(compression).__name__
-        )
+        pass
